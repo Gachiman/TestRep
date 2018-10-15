@@ -1,0 +1,4 @@
+﻿  main.c
+e:\projects\parallel_programming\test_1\test_1\main.c(7): warning C4101: RecvRank: неиспользованная локальная переменная
+  Test_1.vcxproj -> E:\Projects\Parallel_Programming\Test_1\Debug\Test_1.exe
+  Test_1.vcxproj -> E:\Projects\Parallel_Programming\Test_1\Debug\Test_1.pdb (Full PDB)
