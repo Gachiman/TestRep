@@ -1,104 +1,78 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <limits.h>
 #include "mpi.h"
 
-#define N 100
+#define N 75  // Size is set via console - DONE
 
-/*int main(int argc, char* argv[]) {
-    srand(time(NULL));
-    int ProcNum, ProcRank;
-    int vector[N];  // ќбъ€вл€ем и определ€ем одномерный пассив
-    int min = INT_MAX, ProcMin = INT_MAX;
-    MPI_Status Status;
-
-    MPI_Init(&argc, &argv);
-    MPI_Comm_size(MPI_COMM_WORLD, &ProcNum);
-    MPI_Comm_rank(MPI_COMM_WORLD, &ProcRank);
-
-    // Process 0
-    if (ProcRank == 0) {
-        for (int i = 0; i < N; i++) {
-            vector[i] = rand();
-            printf("%6d  ", vector[i]);
-        }
-        for (int i = 0; i < N / ProcNum; i++) {
-            if (vector[i] < min)
-                min = vector[i];
-        }
-        printf("\n\n Minimum from process %d = %d", ProcRank, min);
-        for (int i = 1; i < ProcNum; i++) {
-            MPI_Recv(&ProcMin, 1, MPI_INT, i,
-                MPI_ANY_TAG, MPI_COMM_WORLD, &Status);
-            if (min > ProcMin)
-                min = ProcMin;
-            printf("\n Minimum from process %d = %d", Status.MPI_SOURCE, ProcMin);
-        }
-        printf("\n\n Total minimum = %d\n", min);
-    }
-    // Others process
-    else {
-        if (ProcRank == ProcNum - 1) {
-            for (int i = ProcRank * (N / ProcNum); i < N; i++)
-                if (vector[i] < ProcMin)
-                    ProcMin = vector[i];
-        }
-        else {
-            for (int i = ProcRank * (N / ProcNum); i < ProcRank * (N / ProcNum) + N / ProcNum; i++)
-            if (vector[i] < ProcMin)
-                ProcMin = vector[i];
-        }
-        MPI_Send(&ProcMin, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
-    }
-    MPI_Finalize();
-    return 0;
-}*/
-
-void DataInitialization(int *x);
+void Initialization(int *vector, int size);
+int FindMin(int *vector, int part);
 
 int main(int argc, char* argv[]) {
-    int vector[N], ProcMin = INT_MAX, TotalMin;
+    int ProcMin = INT_MAX, TotalMin, size;
     int ProcRank, ProcNum;
+    double timeStart, timeEnd;
     MPI_Status Status;
 
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &ProcNum);
     MPI_Comm_rank(MPI_COMM_WORLD, &ProcRank);
+
     if (ProcRank == 0)
-        DataInitialization(vector);
-    MPI_Bcast(&vector, N, MPI_INT, 0, MPI_COMM_WORLD);
-    int part = N / ProcNum;
-    int i1 = part * ProcRank;
-    int i2 = (ProcRank == ProcNum - 1)? N : part * (ProcRank + 1);
-    for (; i1 < i2; i1++)
-        if (ProcMin > vector[i1])
-            ProcMin = vector[i1];
+        size = (argc != 1) ? atoi(argv[1]) : 75;  // NoArgumetns means size = 75
+    MPI_Bcast(&size, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    int part = size / ProcNum;
 
-    if (ProcRank == 0) {  // Process 0
-        TotalMin = ProcMin;
-        /*for (int i = 1; i < ProcNum; i++) {
-            MPI_Recv(&ProcMin, 1, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &Status);
-            if (TotalMin > ProcMin)
-                TotalMin = ProcMin;
-        }*/
+    if (ProcRank == 0) {
+        int* vector = malloc(size * sizeof(int));
+        Initialization(vector, size);
+        timeStart = MPI_Wtime();
+        for (int i = 1; i < ProcNum - 1; i++)
+            MPI_Send(vector + part * i, part, MPI_INT, i, 0, MPI_COMM_WORLD);
+        if (ProcNum > 1)
+            MPI_Send(vector + part * ProcNum, size - (ProcNum - 1) * part,
+                MPI_INT, ProcNum - 1, 0, MPI_COMM_WORLD);
+        TotalMin = FindMin(vector, part);
+        free(vector);
     }
-    else  // Others process
-        MPI_Send(&ProcMin, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
+    else {
+        if (ProcRank == ProcNum - 1)
+            part = size - (ProcNum - 1) * part;
+        int *dummyVector = malloc(part * sizeof(int));
+        MPI_Recv(dummyVector, part, MPI_INT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &Status);
+        ProcMin = FindMin(dummyVector, part);
+        //MPI_Send(&ProcMin, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
+        free(dummyVector);
+    }
 
-    MPI_Reduce(&ProcMin, &TotalMin, 1, MPI_INT, MPI_MIN, 0, MPI_COMM_WORLD);
+    if (ProcNum > 1)
+        MPI_Reduce(&ProcMin, &TotalMin, 1, MPI_INT, MPI_MIN, 0, MPI_COMM_WORLD);
 
     // Print result
-    if (ProcRank == 0)
-        printf("\nTotal minimum = %d", TotalMin);
+    if (ProcRank == 0) {
+        timeEnd = MPI_Wtime();
+        printf("\nTotal minimum = %d, work time = %f\n", TotalMin, timeEnd - timeStart);
+    }
     MPI_Finalize();
     return 0;
 }
 
-void DataInitialization(int *x) {
+void Initialization(int *x, int size) {
     srand(time(NULL));
-    for (int i = 0; i < N; i++) {
-        x[i] = rand();
-        printf("%6d  ", x[i]);
-    }
+    if (size <= 75)
+        for (int i = 0; i < size; i++) {
+            x[i] = rand();
+           printf("%6d  ", x[i]);  // print if size <= 75 - DONE
+        }
+    else
+        for (int i = 0; i < size; i++)
+            x[i] = rand();
+}
+
+int FindMin(int *vector, int part) {
+    int min = vector[0];
+    for (int i = 1; i < part; i++)
+        if (vector[i] < min)
+            min = vector[i];
+    return min;
 }
