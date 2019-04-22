@@ -1,0 +1,4 @@
+﻿  main.cpp
+e:\projects\parallel_programming\testrep\kstest\kstest\main.cpp(62): warning C4244: аргумент: преобразование "time_t" в "unsigned int", возможна потеря данных
+  KsTest.vcxproj -> E:\Projects\Parallel_Programming\TestRep\KsTest\Debug\KsTest.exe
+  KsTest.vcxproj -> E:\Projects\Parallel_Programming\TestRep\KsTest\Debug\KsTest.pdb (Full PDB)

@@ -1,0 +1,10 @@
+﻿  main.cpp
+main.cpp(16): warning C4244: аргумент: преобразование "time_t" в "unsigned int", возможна потеря данных
+main.cpp(292): warning C4244: аргумент: преобразование "double" в "int", возможна потеря данных
+  Создание кода
+  1 of 19 functions ( 5.3%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    1 functions had inline decision re-evaluated but remain unchanged
+  Создание кода завершено
+  task3.vcxproj -> E:\Projects\Parallel_Programming\TestRep\task3\Release\task3.exe
+  task3.vcxproj -> E:\Projects\Parallel_Programming\TestRep\task3\Release\task3.pdb (Full PDB)

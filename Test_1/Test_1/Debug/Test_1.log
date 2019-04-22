@@ -1,0 +1,5 @@
+﻿  main.c
+e:\projects\parallel_programming\testrep\test_1\test_1\main.c(63): warning C4101: Status: неиспользованная локальная переменная
+e:\projects\parallel_programming\testrep\test_1\test_1\main.c(99): warning C4244: функция: преобразование "time_t" в "unsigned int", возможна потеря данных
+  Test_1.vcxproj -> E:\Projects\Parallel_Programming\TestRep\Test_1\Debug\Test_1.exe
+  Test_1.vcxproj -> E:\Projects\Parallel_Programming\TestRep\Test_1\Debug\Test_1.pdb (Full PDB)
